@@ -60,11 +60,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   late List<DateTime> _currentWeekDays;
   int _selectedNavIndex = 2; // Middle button default for Dashboard
 
-  // Map storing logged symptoms per date string (YYYY-MM-DD)
   final Map<String, Set<String>> _loggedSymptomsByDate = {};
-
-  // List of generated notifications
   final List<NotificationItem> _notifications = [];
+
+  // Master State Sync
+  late String _patientName;
+  late String _gender;
 
   @override
   void initState() {
@@ -72,6 +73,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     _selectedFullDate = DateTime.now();
     _selectedDateNum = _selectedFullDate.day;
     _currentWeekDays = _generateCurrentWeekDays(_selectedFullDate);
+
+    _patientName = widget.patientName ?? '';
+    _gender = widget.patientGender ?? '';
   }
 
   String _getDateKey(DateTime date) {
@@ -79,13 +83,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   }
 
   String get _patientTitle {
-    if (widget.patientName != null && widget.patientName!.trim().isNotEmpty) {
-      return widget.patientName!;
+    if (_patientName.trim().isNotEmpty) {
+      return _patientName;
     }
-    final gender = widget.patientGender?.trim().toLowerCase();
-    if (gender == 'male') {
+    final g = _gender.trim().toLowerCase();
+    if (g == 'male') {
       return 'Lolo';
-    } else if (gender == 'female') {
+    } else if (g == 'female') {
       return 'Lola';
     }
     return 'Lolo/Lola';
@@ -183,7 +187,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       setState(() {
         _loggedSymptomsByDate[currentKey] = newLogs;
 
-        // Generate notifications for newly logged items
         final now = TimeOfDay.now();
         final timeStr = now.format(context);
 
@@ -210,43 +213,57 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     debugPrint('Redirecting to full activities screen...');
   }
 
-  Widget _buildBody() {
-    if (_selectedNavIndex == 4) {
-      // Rightmost tab -> Profile Screen
-      return ProfileScreen(
-        patientName: _patientTitle,
-        age: widget.age,
-        gender: widget.patientGender,
-        condition: widget.condition,
-        status: widget.status,
-        height: widget.height,
-        weight: widget.weight,
-        comorbidities: widget.comorbidities,
-        healthReportPath: widget.healthReportPath,
-        healthReportName: widget.healthReportName,
-        mriScanPath: widget.mriScanPath,
-        mriScanName: widget.mriScanName,
-        familyMembers: widget.familyMembers,
-        notifications: _notifications, // Passes live notifications
-      );
-    } else if (_selectedNavIndex == 2) {
-      // Middle tab -> Main Dashboard Content
-      return _buildDashboardContent();
-    }
-
-    // Default Fallback
-    return _buildDashboardContent();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          _buildBody(),
-
-          // Floating Bottom Navigation Bar
+          IndexedStack(
+            index: _selectedNavIndex,
+            children: [
+              const Center(child: Text('Leftmost Page')),
+              const Center(child: Text('Second Page')),
+              _buildDashboardContent(),
+              const Center(child: Text('Fourth Page')),
+              ProfileScreen(
+                patientName: widget.patientName ?? '',
+                age: widget.age,
+                gender: widget.patientGender,
+                condition: widget.condition,
+                status: widget.status,
+                height: widget.height,
+                weight: widget.weight,
+                comorbidities: widget.comorbidities,
+                healthReportPath: widget.healthReportPath,
+                healthReportName: widget.healthReportName,
+                mriScanPath: widget.mriScanPath,
+                mriScanName: widget.mriScanName,
+                familyMembers: widget.familyMembers,
+                notifications: _notifications,
+                onProfileUpdated: ({
+                  required String patientName,
+                  required String age,
+                  required String gender,
+                  required String condition,
+                  required String status,
+                  required String height,
+                  required String weight,
+                  required String comorbidities,
+                  required List<String> familyMembers,
+                  String? healthReportPath,
+                  String? healthReportName,
+                  String? mriScanPath,
+                  String? mriScanName,
+                }) {
+                  setState(() {
+                    _patientName = patientName;
+                    _gender = gender;
+                  });
+                },
+              ),
+            ],
+          ),
           Positioned(
             bottom: 20,
             left: 0,
@@ -272,7 +289,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   children: [
                     _buildNavItem(0, Icons.grid_view_rounded),
                     _buildNavItem(1, Icons.psychology_outlined),
-                    _buildNavItem(2, Icons.edit_note_rounded, isGradient: true), // Middle Main Button
+                    _buildNavItem(2, Icons.edit_note_rounded, isGradient: true),
                     _buildNavItem(3, Icons.article_outlined),
                     _buildNavItem(4, Icons.people_outline_rounded),
                   ],
@@ -310,8 +327,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 12),
-
-                // TOP HEADER
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Row(
@@ -346,8 +361,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // DYNAMIC MONTH & DAY HEADER
                 Text(
                   '${_getMonthName(_selectedFullDate.month)} ${_selectedFullDate.day}',
                   style: const TextStyle(
@@ -358,8 +371,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // DYNAMIC WEEK DATE STRIP
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
@@ -441,7 +452,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
                 ElevatedButton(
                   onPressed: _showSymptomLoggingModal,
                   style: ElevatedButton.styleFrom(
@@ -463,10 +473,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 32),
-
-                // IRREGULARITIES CARD
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Container(
@@ -513,10 +520,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 32),
-
-                // RECENT ACTIVITY HEADER
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24.0),
                   child: Align(
@@ -532,10 +536,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
-                // RECENT ACTIVITIES LIST WITH INLINE CIRCULAR "SEE MORE" BUTTON
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: activeLogsList.isEmpty
@@ -786,7 +787,6 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                 ),
               ),
               const SizedBox(height: 12),
-
               Expanded(
                 child: ListView(
                   controller: scrollController,
@@ -826,9 +826,7 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                         const SizedBox(width: 40),
                       ],
                     ),
-
                     const SizedBox(height: 16),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -875,9 +873,7 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 16),
-
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -977,9 +973,7 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(18),
@@ -1023,9 +1017,7 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
                     Center(
                       child: ElevatedButton(
                         onPressed: () => Navigator.pop(context, _selectedSymptoms),

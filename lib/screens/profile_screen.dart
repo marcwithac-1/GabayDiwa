@@ -1,7 +1,23 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'main_dashboard_screen.dart'; // Imports NotificationItem
+import 'main_dashboard_screen.dart';
+
+typedef ProfileUpdateCallback = void Function({
+  required String patientName,
+  required String age,
+  required String gender,
+  required String condition,
+  required String status,
+  required String height,
+  required String weight,
+  required String comorbidities,
+  required List<String> familyMembers,
+  String? healthReportPath,
+  String? healthReportName,
+  String? mriScanPath,
+  String? mriScanName,
+});
 
 class ProfileScreen extends StatefulWidget {
   final String patientName;
@@ -18,6 +34,7 @@ class ProfileScreen extends StatefulWidget {
   final String? mriScanName;
   final List<String> familyMembers;
   final List<NotificationItem> notifications;
+  final ProfileUpdateCallback? onProfileUpdated;
 
   const ProfileScreen({
     super.key,
@@ -35,13 +52,18 @@ class ProfileScreen extends StatefulWidget {
     this.mriScanName,
     this.familyMembers = const [],
     this.notifications = const [],
+    this.onProfileUpdated,
   });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late String _patientName;
   late String _age;
   late String _gender;
@@ -81,6 +103,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .toList();
   }
 
+  void _notifyParentState() {
+    if (widget.onProfileUpdated != null) {
+      widget.onProfileUpdated!(
+        patientName: _patientName,
+        age: _age,
+        gender: _gender,
+        condition: _condition,
+        status: _status,
+        height: _height,
+        weight: _weight,
+        comorbidities: _comorbidities,
+        familyMembers: _familyMembers,
+        healthReportPath: _healthReportPath,
+        healthReportName: _healthReportFileName,
+        mriScanPath: _mriScanPath,
+        mriScanName: _mriScanFileName,
+      );
+    }
+  }
+
   String _cleanNamePrefix(String rawName) {
     return rawName
         .replaceAll(RegExp(r'^(Ate|Kuya)\.?\s+', caseSensitive: false), '')
@@ -103,6 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _mriScanFileName = result.files.single.name;
         }
       });
+      _notifyParentState();
     }
   }
 
@@ -246,6 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             _weight = weightCtrl.text.trim();
                             _comorbidities = comorbiditiesCtrl.text.trim();
                           });
+                          _notifyParentState();
                           Navigator.pop(context);
                         },
                         child: const Text(
@@ -323,6 +367,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       setState(() {
                         _familyMembers.add(cleanName);
                       });
+                      _notifyParentState();
                       Navigator.pop(context);
                     }
                   },
@@ -342,7 +387,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // --- POPUP TO SEE ALL NOTIFICATIONS ---
   void _showAllNotificationsModal() {
     showModalBottomSheet(
       context: context,
@@ -418,6 +462,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     const primaryPurple = Color(0xFF6B21A8);
     const softPurple = Color(0xFF8B7EC8);
     const darkText = Color(0xFF1E1E1E);
@@ -679,7 +724,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 4. NOTIFICATIONS CARD (LIMITED TO 3 + SEE ALL BUTTON)
+                  // 4. NOTIFICATIONS CARD
                   _buildCardContainer(
                     color: Colors.white,
                     child: Column(
