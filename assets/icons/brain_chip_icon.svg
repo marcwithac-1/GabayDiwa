@@ -1,0 +1,38 @@
+<svg width="117" height="117" viewBox="0 0 117 117" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="iconGradient" x1="58.5" y1="0" x2="58.5" y2="117" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7410C6"/>
+      <stop offset="1" stop-color="#8A9CE8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Quatrefoil / flower outline (4 overlapping lobes) -->
+  <g stroke="url(#iconGradient)" stroke-width="9" fill="#FFFFFF">
+    <circle cx="39" cy="39" r="33"/>
+    <circle cx="78" cy="39" r="33"/>
+    <circle cx="39" cy="78" r="33"/>
+    <circle cx="78" cy="78" r="33"/>
+  </g>
+  <!-- Mask the internal seams so the lobes read as one continuous outline -->
+  <circle cx="58.5" cy="58.5" r="38" fill="#FFFFFF"/>
+
+  <!-- Center chip glyph -->
+  <g fill="url(#iconGradient)">
+    <rect x="37" y="37" width="43" height="43" rx="4"/>
+    <!-- pins -->
+    <rect x="46" y="27" width="6" height="10"/>
+    <rect x="65" y="27" width="6" height="10"/>
+    <rect x="46" y="80" width="6" height="10"/>
+    <rect x="65" y="80" width="6" height="10"/>
+    <rect x="27" y="46" width="10" height="6"/>
+    <rect x="27" y="65" width="10" height="6"/>
+    <rect x="80" y="46" width="10" height="6"/>
+    <rect x="80" y="65" width="10" height="6"/>
+  </g>
+  <!-- Circuit cross cutout inside the chip -->
+  <g fill="#FFFFFF">
+    <rect x="55" y="41" width="7" height="35"/>
+    <rect x="41" y="55" width="35" height="7"/>
+  </g>
+  <rect x="52" y="52" width="13" height="13" fill="url(#iconGradient)"/>
+</svg>
