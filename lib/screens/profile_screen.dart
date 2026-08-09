@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'main_dashboard_screen.dart'; // Imports NotificationItem
 
 class ProfileScreen extends StatefulWidget {
   final String patientName;
@@ -16,6 +17,7 @@ class ProfileScreen extends StatefulWidget {
   final String? mriScanPath;
   final String? mriScanName;
   final List<String> familyMembers;
+  final List<NotificationItem> notifications;
 
   const ProfileScreen({
     super.key,
@@ -32,6 +34,7 @@ class ProfileScreen extends StatefulWidget {
     this.mriScanPath,
     this.mriScanName,
     this.familyMembers = const [],
+    this.notifications = const [],
   });
 
   @override
@@ -49,9 +52,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late String _comorbidities;
 
   String? _healthReportPath;
-  String? _healthReportFileName; // Unified variable name
+  String? _healthReportFileName;
   String? _mriScanPath;
-  String? _mriScanFileName;     // Unified variable name
+  String? _mriScanFileName;
 
   late List<String> _familyMembers;
 
@@ -68,9 +71,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _comorbidities = widget.comorbidities?.trim() ?? '';
 
     _healthReportPath = widget.healthReportPath;
-    _healthReportFileName = widget.healthReportName; // Fixed mapping
+    _healthReportFileName = widget.healthReportName;
     _mriScanPath = widget.mriScanPath;
-    _mriScanFileName = widget.mriScanName;           // Fixed mapping
+    _mriScanFileName = widget.mriScanName;
 
     _familyMembers = widget.familyMembers
         .map((e) => _cleanNamePrefix(e))
@@ -339,13 +342,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // --- POPUP TO SEE ALL NOTIFICATIONS ---
+  void _showAllNotificationsModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'All Notifications',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF6B21A8),
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: widget.notifications.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No notifications logged yet.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          )
+                        : ListView.separated(
+                            controller: scrollController,
+                            itemCount: widget.notifications.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final item = widget.notifications[index];
+                              return _buildNotificationTile(
+                                bgColor: item.bgColor,
+                                icon: item.icon,
+                                iconColor: item.iconColor,
+                                text: item.text,
+                                time: item.time,
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const primaryPurple = Color(0xFF6B21A8);
     const softPurple = Color(0xFF8B7EC8);
-    const cardBgColor = Color(0xFFEFE8FF);
-    const lightBlueBg = Color(0xFFD3E8FD);
-    const lightGreenBg = Color(0xFFC7F3D6);
     const darkText = Color(0xFF1E1E1E);
 
     final healthCount = _healthReportPath != null ? 1 : 0;
@@ -605,67 +679,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 4. NOTIFICATIONS CARD
+                  // 4. NOTIFICATIONS CARD (LIMITED TO 3 + SEE ALL BUTTON)
                   _buildCardContainer(
                     color: Colors.white,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Notifications',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: darkText,
-                                fontFamily: 'Poppins',
-                              ),
+                        const Text(
+                          'Notifications',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: darkText,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        if (widget.notifications.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12.0),
+                            child: Text(
+                              'No notifications yet.',
+                              style: TextStyle(color: Colors.grey, fontSize: 13),
                             ),
-                            TextButton(
-                              onPressed: () {},
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          )
+                        else ...[
+                          ...widget.notifications.take(3).map((notif) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10.0),
+                              child: _buildNotificationTile(
+                                bgColor: notif.bgColor,
+                                icon: notif.icon,
+                                iconColor: notif.iconColor,
+                                text: notif.text,
+                                time: notif.time,
                               ),
+                            );
+                          }),
+                          const SizedBox(height: 8),
+                          Center(
+                            child: TextButton(
+                              onPressed: _showAllNotificationsModal,
                               child: const Text(
-                                'Edit',
+                                'See All Notifications',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.bold,
                                   color: primaryPurple,
                                   fontFamily: 'Poppins',
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        _buildNotificationTile(
-                          bgColor: cardBgColor,
-                          icon: Icons.check_circle_rounded,
-                          iconColor: primaryPurple,
-                          text: "Logged 'Lost balance'",
-                          time: "1:17AM",
-                        ),
-                        const SizedBox(height: 10),
-                        _buildNotificationTile(
-                          bgColor: lightGreenBg,
-                          icon: Icons.check_circle_rounded,
-                          iconColor: const Color(0xFF22C55E),
-                          text: "Finished logging today.",
-                          time: "2:11AM",
-                        ),
-                        const SizedBox(height: 10),
-                        _buildNotificationTile(
-                          bgColor: lightBlueBg,
-                          icon: Icons.warning_rounded,
-                          iconColor: const Color(0xFF0284C7),
-                          text: "Progression updated: View changes",
-                          time: "2:11AM",
-                        ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
