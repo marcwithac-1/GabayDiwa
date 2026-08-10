@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'gabay_board_screen.dart';
+import 'gabay_twin_screen.dart';
 import 'profile_screen.dart';
 import 'report_screen.dart';
 
@@ -106,6 +107,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     return "${date.year}-${date.month}-${date.day}";
   }
 
+  // Helper to strictly override display title to Lolo/Lola based on gender
   String get _patientDisplayTitle {
     final g = _gender.trim().toLowerCase();
     if (g == 'male') {
@@ -318,23 +320,34 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           IndexedStack(
             index: _selectedNavIndex,
             children: [
-              // Index 0: Leftmost Icon -> GabayBoard
+              // Index 0: 1st Icon -> GabayBoard Screen
               GabayBoardScreen(
                 patientName: _patientName,
                 patientGender: _gender,
                 loggedSymptomsByDate: _loggedSymptomsByDate,
                 onSeeFullReportPressed: () {
                   setState(() {
-                    _selectedNavIndex = 3; // Switch tab to Report Screen (Index 3)
+                    _selectedNavIndex = 3; // Redirect to Report Screen
                   });
                 },
               ),
 
-              const Center(child: Text('Second Page')), // Index 1
+              // Index 1: 2nd Icon -> GabayTwin Screen
+              GabayTwinScreen(
+                patientName: _patientName,
+                patientGender: _gender,
+                loggedSymptomsByDate: _loggedSymptomsByDate,
+                onGenerateReportPressed: () {
+                  setState(() {
+                    _selectedNavIndex = 3; // Redirect to Report Screen
+                  });
+                },
+              ),
 
-              _buildDashboardContent(), // Index 2 (Middle Main Dashboard)
+              // Index 2: 3rd Icon -> Middle Dashboard
+              _buildDashboardContent(),
 
-              // Index 3 (4th Icon -> Report Screen)
+              // Index 3: 4th Icon -> Report Screen
               ReportScreen(
                 patientName: _patientName,
                 age: _age,
@@ -347,7 +360,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 loggedSymptomsByDate: _loggedSymptomsByDate,
               ),
 
-              // Index 4 (5th Icon -> Profile Screen)
+              // Index 4: 5th Icon -> Profile Screen
               ProfileScreen(
                 patientName: _patientName,
                 age: _age,
@@ -450,7 +463,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
         .where((s) => !s.toLowerCase().contains('none'))
         .toList();
 
-    // Generate dynamic tip based on symptom logs
     final dynamicTip = _generateDynamicTip();
 
     return SafeArea(

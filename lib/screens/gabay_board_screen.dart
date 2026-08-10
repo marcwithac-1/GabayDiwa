@@ -203,16 +203,24 @@ class _GabayBoardScreenState extends State<GabayBoardScreen> {
                       ),
                     ),
                   ] else ...[
+                    // --- 3D BRAIN OVERLAY WITH COGNITIVE ACTIVITY CARD ---
                     Stack(
                       alignment: Alignment.topCenter,
                       children: [
+                        // Background Brain Graphic Replacement
                         Padding(
-                          padding: const EdgeInsets.only(top: 40.0),
+                          padding: const EdgeInsets.only(top: 20.0),
                           child: Center(
-                            child: Icon(
-                              Icons.psychology_rounded,
-                              size: 220,
-                              color: Colors.grey.shade300,
+                            child: Image.asset(
+                              'assets/images/brain_board.png',
+                              height: 250,
+                              width: 250,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.psychology_rounded,
+                                size: 220,
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                           ),
                         ),
@@ -438,20 +446,13 @@ class _GabayBoardScreenState extends State<GabayBoardScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  RichText(
+                                  Text(
+                                    sleepState,
                                     textAlign: TextAlign.center,
-                                    text: TextSpan(
-                                      style: const TextStyle(
-                                          fontSize: 11,
-                                          color: darkText,
-                                          fontFamily: 'Poppins'),
-                                      children: [
-                                        TextSpan(
-                                          text: counts['Sleep']! > 0 ? 'Decline ' : 'Restful ',
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
-                                        ),
-                                        const TextSpan(text: 'in Night Rest'),
-                                      ],
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: darkText,
                                     ),
                                   ),
                                 ],
