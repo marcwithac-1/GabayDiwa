@@ -103,6 +103,20 @@ class _ProfileScreenState extends State<ProfileScreen>
         .toList();
   }
 
+  // Helper to strictly override display title to Lolo/Lola based on gender
+  String get _patientDisplayTitle {
+    final g = _gender.trim().toLowerCase();
+    if (g == 'male') {
+      return 'Lolo';
+    } else if (g == 'female') {
+      return 'Lola';
+    }
+    if (_patientName.trim().isNotEmpty) {
+      return _patientName;
+    }
+    return 'Lolo/Lola';
+  }
+
   void _notifyParentState() {
     if (widget.onProfileUpdated != null) {
       widget.onProfileUpdated!(
@@ -469,6 +483,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     final healthCount = _healthReportPath != null ? 1 : 0;
     final mriCount = _mriScanPath != null ? 1 : 0;
+    final title = _patientDisplayTitle;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F8FE),
@@ -497,7 +512,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "$_patientName's Profile",
+                    "$title's Profile",
                     style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
@@ -699,11 +714,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                         else
                           ..._familyMembers.asMap().entries.map((entry) {
                             final idx = entry.key;
-                            final name = entry.value;
+                            final memberName = entry.value;
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12.0),
                               child: _buildFamilyMemberRow(
-                                name: name,
+                                name: memberName,
                                 role: idx == 0 ? 'Primary' : 'Support',
                                 avatarColor: idx == 0
                                     ? const Color(0xFFD7C2DF)

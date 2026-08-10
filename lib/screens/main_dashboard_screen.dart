@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'gabay_board_screen.dart';
 import 'profile_screen.dart';
 import 'report_screen.dart';
 
@@ -105,15 +106,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     return "${date.year}-${date.month}-${date.day}";
   }
 
-  String get _patientTitle {
-    if (_patientName.trim().isNotEmpty) {
-      return _patientName;
-    }
+  // Helper to strictly override display title to Lolo/Lola based on gender
+  String get _patientDisplayTitle {
     final g = _gender.trim().toLowerCase();
     if (g == 'male') {
       return 'Lolo';
     } else if (g == 'female') {
       return 'Lola';
+    }
+    if (_patientName.trim().isNotEmpty) {
+      return _patientName;
     }
     return 'Lolo/Lola';
   }
@@ -242,14 +244,25 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // IndexedStack preserves state across tab changes
           IndexedStack(
             index: _selectedNavIndex,
             children: [
-              const Center(child: Text('Leftmost Page')), // Index 0
-              const Center(child: Text('Second Page')),   // Index 1
-              _buildDashboardContent(),                   // Index 2 (Middle Main Dashboard)
-              
+              // Index 0: Leftmost Icon -> GabayBoard
+              GabayBoardScreen(
+                patientName: _patientName,
+                patientGender: _gender,
+                loggedSymptomsByDate: _loggedSymptomsByDate,
+                onSeeFullReportPressed: () {
+                  setState(() {
+                    _selectedNavIndex = 3; // Switch tab to Report Screen (Index 3)
+                  });
+                },
+              ),
+
+              const Center(child: Text('Second Page')), // Index 1
+
+              _buildDashboardContent(), // Index 2 (Middle Main Dashboard)
+
               // Index 3 (4th Icon -> Report Screen)
               ReportScreen(
                 patientName: _patientName,
@@ -366,6 +379,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
         .where((s) => !s.toLowerCase().contains('none'))
         .toList();
 
+    final title = _patientDisplayTitle;
+
     return SafeArea(
       bottom: false,
       child: SingleChildScrollView(
@@ -470,8 +485,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 28),
+
                 Text(
-                  "Look out for $_patientTitle's mood.",
+                  "Look out for $title's mood.",
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -483,7 +499,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32.0),
                   child: Text(
-                    'Play $_patientTitle some\nmusic today.',
+                    'Play $title some\nmusic today.',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 32,
@@ -498,7 +514,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40.0),
                   child: Text(
-                    "Learn how $_patientTitle's mood may be the most affected for this month.",
+                    "Learn how $title's mood may be the most affected for this month.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -603,7 +619,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 
                 const SizedBox(height: 16),
 
-                // RECENT ACTIVITIES LIST WITH INLINE CIRCULAR "SEE MORE" BUTTON
+                // RECENT ACTIVITIES LIST
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: activeLogsList.isEmpty
@@ -660,9 +676,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                             ),
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics(),
-                              ),
+                              physics: const BouncingScrollPhysics(),
                               itemCount: (activeLogsList.length > 5 ? 5 : activeLogsList.length) + 1,
                               itemBuilder: (context, index) {
                                 final totalCards = activeLogsList.length > 5 ? 5 : activeLogsList.length;
@@ -706,7 +720,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                 }
 
                                 final itemKey = activeLogsList[index];
-                                final title = itemKey.split('-').last;
+                                final cardTitle = itemKey.split('-').last;
                                 final monthAbbr = _getMonthAbbreviation(_selectedFullDate.month);
 
                                 return Container(
@@ -714,7 +728,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                                   margin: const EdgeInsets.only(right: 12),
                                   child: _ActivityCard(
                                     date: '$monthAbbr $_selectedDateNum',
-                                    title: title,
+                                    title: cardTitle,
                                     cardColor: const Color(0xFFD7CAFA),
                                     icon: Icons.sentiment_very_dissatisfied_rounded,
                                     iconColor: softPurple,
@@ -774,7 +788,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   }
 }
 
-// --- SYMPTOM LOGGING MODAL WIDGET ---
 class _SymptomLoggingModal extends StatefulWidget {
   final Set<String> initialSelected;
   final DateTime displayDate;

@@ -13,8 +13,6 @@ class ReportScreen extends StatefulWidget {
   final String weight;
   final String comorbidities;
 
-  // Real activity logs passed from MainDashboardScreen
-  // Format key: "YYYY-M-D" e.g., "2026-8-10"
   final Map<String, Set<String>> loggedSymptomsByDate;
 
   const ReportScreen({
@@ -35,6 +33,20 @@ class ReportScreen extends StatefulWidget {
 }
 
 class _ReportScreenState extends State<ReportScreen> {
+  // Helper to strictly override display title to Lolo/Lola based on gender
+  String get _patientDisplayTitle {
+    final g = widget.gender.trim().toLowerCase();
+    if (g == 'male') {
+      return 'Lolo';
+    } else if (g == 'female') {
+      return 'Lola';
+    }
+    if (widget.patientName.trim().isNotEmpty) {
+      return widget.patientName;
+    }
+    return 'Lolo/Lola';
+  }
+
   String _getCurrentMonthYear() {
     final now = DateTime.now();
     const months = [
@@ -112,7 +124,6 @@ class _ReportScreenState extends State<ReportScreen> {
     return categoryCounts;
   }
 
-  // Map scores strictly to Month 0 (0), Month 2 (1), Month 4 (2), Month 6 (3)
   Map<String, Map<int, double>> _calculateProgressionMapData() {
     if (widget.loggedSymptomsByDate.isEmpty) {
       return {};
@@ -172,7 +183,6 @@ class _ReportScreenState extends State<ReportScreen> {
     return domainScoresByMonthIndex;
   }
 
-  // Map scores strictly to Week 0 (0), Week 2 (1), Week 4 (2), Week 6 (3)
   Map<int, double> _calculateWeeklyImpairmentScores() {
     if (widget.loggedSymptomsByDate.isEmpty) {
       return {};
@@ -258,11 +268,10 @@ class _ReportScreenState extends State<ReportScreen> {
     return riskFactors.toList();
   }
 
-  // --- SAFE PDF EXPORT WITH FALLBACK HANDLING ---
   Future<void> _exportReportAsPdf() async {
     try {
       final pdf = pw.Document();
-      final name = widget.patientName.isNotEmpty ? widget.patientName : 'Patient';
+      final name = _patientDisplayTitle;
       final ageStr = widget.age.isNotEmpty ? widget.age : 'N/A';
       final conditionStr = widget.condition.isNotEmpty ? widget.condition : 'N/A';
       final monthYear = _getCurrentMonthYear();
@@ -381,7 +390,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
       await Printing.sharePdf(
         bytes: pdfBytes,
-        filename: 'GabayDiwa_Health_Report_${widget.patientName.replaceAll(' ', '_')}.pdf',
+        filename: 'GabayDiwa_Health_Report_${_patientDisplayTitle.replaceAll(' ', '_')}.pdf',
       );
     } catch (e) {
       if (mounted) {
@@ -395,8 +404,9 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
-  // --- POPUP REPORT PREVIEW MODAL ---
   void _showReportPreviewModal() {
+    final title = _patientDisplayTitle;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -514,7 +524,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      'Patient: ${widget.patientName.isNotEmpty ? widget.patientName : "Patient"} (${widget.age.isNotEmpty ? widget.age : "78"})',
+                                      'Patient: $title (${widget.age.isNotEmpty ? widget.age : "78"})',
                                       style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
                                     ),
                                     Text(
@@ -713,6 +723,8 @@ class _ReportScreenState extends State<ReportScreen> {
     const softPurple = Color(0xFF8B7EC8);
     const darkText = Color(0xFF1E1E1E);
 
+    final title = _patientDisplayTitle;
+
     final activityLogs = _generateActivityLogs();
     final hasLogs = activityLogs.isNotEmpty;
 
@@ -793,7 +805,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     child: Column(
                       children: [
                         Text(
-                          "${widget.patientName.isNotEmpty ? widget.patientName : 'Patient'}'s Report",
+                          "$title's Report",
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
@@ -838,9 +850,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.patientName.isNotEmpty
-                                  ? widget.patientName
-                                  : 'Patient Name',
+                              title,
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -1033,7 +1043,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
                     const SizedBox(height: 28),
 
-                    // --- 2. PROGRESSION MAP (STRICTLY CONSTRAINED) ---
+                    // --- 2. PROGRESSION MAP ---
                     const Text(
                       'Progression Map',
                       style: TextStyle(
@@ -1287,7 +1297,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
                     const SizedBox(height: 28),
 
-                    // --- 4. COGNITIVE IMPAIRMENT (STRICTLY CONSTRAINED) ---
+                    // --- 4. COGNITIVE IMPAIRMENT ---
                     const Text(
                       'Cognitive Impairment',
                       style: TextStyle(
@@ -1536,7 +1546,6 @@ class _MiniChartPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// STRICT PROGRESSION MAP PAINTER (MONTH 0, 2, 4, 6 WITHIN BOUNDS)
 class _StrictProgressionChartPainter extends CustomPainter {
   final Map<String, Map<int, double>> domainScoresByMonthIndex;
 
@@ -1561,7 +1570,6 @@ class _StrictProgressionChartPainter extends CustomPainter {
       fontWeight: FontWeight.bold,
     );
 
-    // Y-Axis Labels
     final yLabels = ['100', '80', '60', '40', '20', '0'];
     for (int i = 0; i < yLabels.length; i++) {
       double y = chartH * (i / (yLabels.length - 1));
@@ -1574,7 +1582,6 @@ class _StrictProgressionChartPainter extends CustomPainter {
       tp.paint(canvas, Offset(leftMargin - tp.width - 6, y - (tp.height / 2)));
     }
 
-    // X-Axis Labels (Month 0, Month 2, Month 4, Month 6)
     final xLabels = ['Month 0', 'Month 2', 'Month 4', 'Month 6'];
     for (int i = 0; i < xLabels.length; i++) {
       double x = leftMargin + (chartW * (i / (xLabels.length - 1)));
@@ -1609,7 +1616,7 @@ class _StrictProgressionChartPainter extends CustomPainter {
       final path = Path();
 
       for (int i = 0; i < sortedMonthKeys.length; i++) {
-        int monthSlot = sortedMonthKeys[i]; // 0, 1, 2, 3
+        int monthSlot = sortedMonthKeys[i];
         double score = monthScores[monthSlot]!;
 
         double x = leftMargin + (chartW * (monthSlot / 3.0));
@@ -1634,7 +1641,6 @@ class _StrictProgressionChartPainter extends CustomPainter {
       oldDelegate.domainScoresByMonthIndex != domainScoresByMonthIndex;
 }
 
-// STRICT COGNITIVE IMPAIRMENT PAINTER (CONSTRAINED WITHIN CHART BOUNDS)
 class _StrictImpairmentChartPainter extends CustomPainter {
   final Map<int, double> weekScores;
 
@@ -1661,7 +1667,6 @@ class _StrictImpairmentChartPainter extends CustomPainter {
       fontWeight: FontWeight.w600,
     );
 
-    // Y-Axis
     final yLabels = ['100', '80', '60', '40', '20', '0'];
     for (int i = 0; i < yLabels.length; i++) {
       double y = chartH * (i / (yLabels.length - 1));
@@ -1672,7 +1677,6 @@ class _StrictImpairmentChartPainter extends CustomPainter {
       tp.paint(canvas, Offset(leftMargin - tp.width - 6, y - (tp.height / 2)));
     }
 
-    // X-Axis
     final xLabels = ['Week 0', 'Week 2', 'Week 4', 'Week 6'];
     for (int i = 0; i < xLabels.length; i++) {
       double x = leftMargin + (chartW * (i / (xLabels.length - 1)));
@@ -1685,7 +1689,6 @@ class _StrictImpairmentChartPainter extends CustomPainter {
 
     double zoneH = chartH / 3;
 
-    // Background Zones
     canvas.drawRect(
       Rect.fromLTWH(leftMargin, 0, chartW, zoneH),
       Paint()..color = const Color(0xFFFFF0F2),
