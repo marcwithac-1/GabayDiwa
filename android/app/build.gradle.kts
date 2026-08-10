@@ -19,9 +19,9 @@ android {
         applicationId = "com.example.gabaydiwa"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
+        minSdk = 21
+        targetSdk = 34
+        versionCode = flutterVersionCode.toInteger()
         versionName = flutter.versionName
     }
 
