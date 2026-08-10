@@ -106,7 +106,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     return "${date.year}-${date.month}-${date.day}";
   }
 
-  // Helper to strictly override display title to Lolo/Lola based on gender
   String get _patientDisplayTitle {
     final g = _gender.trim().toLowerCase();
     if (g == 'male') {
@@ -154,6 +153,78 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       }
     }
     return count;
+  }
+
+  // Dynamic Suggestion Generator based on Logged Symptoms
+  Map<String, String> _generateDynamicTip() {
+    final title = _patientDisplayTitle;
+    final Set<String> activeWeekSymptoms = {};
+
+    for (var d in _currentWeekDays) {
+      final key = _getDateKey(d);
+      if (_loggedSymptomsByDate.containsKey(key)) {
+        activeWeekSymptoms.addAll(_loggedSymptomsByDate[key]!);
+      }
+    }
+
+    final lowerLogs = activeWeekSymptoms
+        .where((s) => !s.toLowerCase().contains('none'))
+        .map((s) => s.toLowerCase())
+        .toList();
+
+    if (lowerLogs.isEmpty) {
+      return {
+        'headline': "Look out for $title's mood.",
+        'mainTip': "Check in on\n$title today.",
+        'subTip': "Learn how $title's mood and daily routine can be supported this month.",
+      };
+    }
+
+    if (lowerLogs.any((s) => s.contains('anger') || s.contains('aggression') || s.contains('anxiety') || s.contains('sad'))) {
+      return {
+        'headline': "Look out for $title's emotional comfort.",
+        'mainTip': "Play $title some\ncalming music today.",
+        'subTip': "Gentle music or soothing scents can help relieve agitation and anxiety.",
+      };
+    }
+
+    if (lowerLogs.any((s) => s.contains('dizzy') || s.contains('balance') || s.contains('fall') || s.contains('unsteady'))) {
+      return {
+        'headline': "Look out for $title's mobility & safety.",
+        'mainTip': "Keep $title's walkways\nwell-lit today.",
+        'subTip': "Ensure clear pathways and non-slip mats to lower fall risks.",
+      };
+    }
+
+    if (lowerLogs.any((s) => s.contains('sleep') || s.contains('sleeping') || s.contains('pacing') || s.contains('restless'))) {
+      return {
+        'headline': "Look out for $title's sleep rhythm.",
+        'mainTip': "Guide $title through a\nlight walk today.",
+        'subTip': "Daytime sunlight and light activity improve evening sleep quality.",
+      };
+    }
+
+    if (lowerLogs.any((s) => s.contains('routine') || s.contains('task') || s.contains('repeat') || s.contains('forgot'))) {
+      return {
+        'headline': "Look out for $title's cognitive memory.",
+        'mainTip': "Set up a visual\nroutine for $title.",
+        'subTip': "Simple visual prompts reduce confusion and ease daily memory strain.",
+      };
+    }
+
+    if (lowerLogs.any((s) => s.contains('meal') || s.contains('meds') || s.contains('bath') || s.contains('care'))) {
+      return {
+        'headline': "Look out for $title's daily care.",
+        'mainTip': "Use gentle, step-by-step\nprompts for $title.",
+        'subTip': "Breaking daily activities into small, calm tasks helps gain cooperation.",
+      };
+    }
+
+    return {
+      'headline': "Look out for $title's wellbeing.",
+      'mainTip': "Engage $title in\ncalm activities today.",
+      'subTip': "Consistent routines help manage daily cognitive changes effectively.",
+    };
   }
 
   Future<void> _openCalendarPicker() async {
@@ -379,7 +450,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
         .where((s) => !s.toLowerCase().contains('none'))
         .toList();
 
-    final title = _patientDisplayTitle;
+    // Generate dynamic tip based on symptom logs
+    final dynamicTip = _generateDynamicTip();
 
     return SafeArea(
       bottom: false,
@@ -486,8 +558,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 ),
                 const SizedBox(height: 28),
 
+                // DYNAMIC HEADLINE
                 Text(
-                  "Look out for $title's mood.",
+                  dynamicTip['headline']!,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -496,13 +569,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
+
+                // DYNAMIC MAIN TIP
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32.0),
                   child: Text(
-                    'Play $title some\nmusic today.',
+                    dynamicTip['mainTip']!,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 32,
+                      fontSize: 30,
                       height: 1.15,
                       fontWeight: FontWeight.w900,
                       color: darkText,
@@ -511,10 +586,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
+
+                // DYNAMIC SUB-TIP
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40.0),
                   child: Text(
-                    "Learn how $title's mood may be the most affected for this month.",
+                    dynamicTip['subTip']!,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
