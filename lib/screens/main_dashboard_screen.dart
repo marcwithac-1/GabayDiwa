@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'profile_screen.dart';
+import 'report_screen.dart';
 
 class NotificationItem {
   final String text;
@@ -65,7 +66,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 
   // Master State Sync
   late String _patientName;
+  late String _age;
   late String _gender;
+  late String _condition;
+  late String _status;
+  late String _height;
+  late String _weight;
+  late String _comorbidities;
+  late List<String> _familyMembers;
+  String? _healthReportPath;
+  String? _healthReportName;
+  String? _mriScanPath;
+  String? _mriScanName;
 
   @override
   void initState() {
@@ -75,7 +87,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     _currentWeekDays = _generateCurrentWeekDays(_selectedFullDate);
 
     _patientName = widget.patientName ?? '';
+    _age = widget.age ?? '';
     _gender = widget.patientGender ?? '';
+    _condition = widget.condition ?? '';
+    _status = widget.status ?? '';
+    _height = widget.height ?? '';
+    _weight = widget.weight ?? '';
+    _comorbidities = widget.comorbidities ?? '';
+    _familyMembers = List.from(widget.familyMembers);
+    _healthReportPath = widget.healthReportPath;
+    _healthReportName = widget.healthReportName;
+    _mriScanPath = widget.mriScanPath;
+    _mriScanName = widget.mriScanName;
   }
 
   String _getDateKey(DateTime date) {
@@ -219,27 +242,42 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // IndexedStack preserves state across tab changes
           IndexedStack(
             index: _selectedNavIndex,
             children: [
-              const Center(child: Text('Leftmost Page')),
-              const Center(child: Text('Second Page')),
-              _buildDashboardContent(),
-              const Center(child: Text('Fourth Page')),
+              const Center(child: Text('Leftmost Page')), // Index 0
+              const Center(child: Text('Second Page')),   // Index 1
+              _buildDashboardContent(),                   // Index 2 (Middle Main Dashboard)
+              
+              // Index 3 (4th Icon -> Report Screen)
+              ReportScreen(
+                patientName: _patientName,
+                age: _age,
+                gender: _gender,
+                condition: _condition,
+                status: _status,
+                height: _height,
+                weight: _weight,
+                comorbidities: _comorbidities,
+                loggedSymptomsByDate: _loggedSymptomsByDate,
+              ),
+
+              // Index 4 (5th Icon -> Profile Screen)
               ProfileScreen(
-                patientName: widget.patientName ?? '',
-                age: widget.age,
-                gender: widget.patientGender,
-                condition: widget.condition,
-                status: widget.status,
-                height: widget.height,
-                weight: widget.weight,
-                comorbidities: widget.comorbidities,
-                healthReportPath: widget.healthReportPath,
-                healthReportName: widget.healthReportName,
-                mriScanPath: widget.mriScanPath,
-                mriScanName: widget.mriScanName,
-                familyMembers: widget.familyMembers,
+                patientName: _patientName,
+                age: _age,
+                gender: _gender,
+                condition: _condition,
+                status: _status,
+                height: _height,
+                weight: _weight,
+                comorbidities: _comorbidities,
+                healthReportPath: _healthReportPath,
+                healthReportName: _healthReportName,
+                mriScanPath: _mriScanPath,
+                mriScanName: _mriScanName,
+                familyMembers: _familyMembers,
                 notifications: _notifications,
                 onProfileUpdated: ({
                   required String patientName,
@@ -258,12 +296,25 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 }) {
                   setState(() {
                     _patientName = patientName;
+                    _age = age;
                     _gender = gender;
+                    _condition = condition;
+                    _status = status;
+                    _height = height;
+                    _weight = weight;
+                    _comorbidities = comorbidities;
+                    _familyMembers = List.from(familyMembers);
+                    if (healthReportPath != null) _healthReportPath = healthReportPath;
+                    if (healthReportName != null) _healthReportName = healthReportName;
+                    if (mriScanPath != null) _mriScanPath = mriScanPath;
+                    if (mriScanName != null) _mriScanName = mriScanName;
                   });
                 },
               ),
             ],
           ),
+
+          // Floating Bottom Navigation Bar
           Positioned(
             bottom: 20,
             left: 0,
@@ -327,6 +378,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 12),
+
+                // TOP HEADER
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Row(
@@ -361,6 +414,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // DYNAMIC MONTH & DAY HEADER
                 Text(
                   '${_getMonthName(_selectedFullDate.month)} ${_selectedFullDate.day}',
                   style: const TextStyle(
@@ -371,6 +426,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // DYNAMIC WEEK DATE STRIP
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
@@ -452,6 +509,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+
                 ElevatedButton(
                   onPressed: _showSymptomLoggingModal,
                   style: ElevatedButton.styleFrom(
@@ -473,7 +531,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 32),
+
+                // IRREGULARITIES CARD
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Container(
@@ -520,7 +581,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 32),
+
+                // RECENT ACTIVITY HEADER
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24.0),
                   child: Align(
@@ -536,7 +600,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
+                // RECENT ACTIVITIES LIST WITH INLINE CIRCULAR "SEE MORE" BUTTON
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: activeLogsList.isEmpty
@@ -787,6 +854,7 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                 ),
               ),
               const SizedBox(height: 12),
+
               Expanded(
                 child: ListView(
                   controller: scrollController,
@@ -826,7 +894,9 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                         const SizedBox(width: 40),
                       ],
                     ),
+
                     const SizedBox(height: 16),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -873,7 +943,9 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 16),
+
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -973,7 +1045,9 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                         ],
                       ),
                     ),
+
                     const SizedBox(height: 20),
+
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(18),
@@ -1017,7 +1091,9 @@ class _SymptomLoggingModalState extends State<_SymptomLoggingModal> {
                         ],
                       ),
                     ),
+
                     const SizedBox(height: 24),
+
                     Center(
                       child: ElevatedButton(
                         onPressed: () => Navigator.pop(context, _selectedSymptoms),
